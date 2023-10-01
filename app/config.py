@@ -7,7 +7,7 @@ import os
 from typing import Any, Dict, Optional
 
 import yaml
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 logger = logging.getLogger("llm-api.config")
 

@@ -1,6 +1,10 @@
 """
-Llama GPTQ implementation
+Llama 2 implementation on GPU
+Created by: BA
+Date: Oct 1st 23
 """
+#%% Importing libs and utils
+
 import logging
 import os
 import sys
@@ -12,18 +16,13 @@ from safetensors.torch import load_file as safe_load
 from transformers import AutoTokenizer, LlamaConfig, LlamaForCausalLM
 from transformers.modeling_utils import no_init_weights
 
-from app.base import BaseLLM
-from app.config import settings
+from base import BaseLLM
+from config import settings
+
+
+#%%
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "GPTQ-for-LLaMa"))
-
-try:
-    from .GPTQforLLaMa import quant
-    from .GPTQforLLaMa.utils import find_layers
-except ImportError as exp:
-    raise ImportError(
-        "the GPTQ-for-LLaMa lib is missing, please install it first"
-    ) from exp
 
 
 logger = logging.getLogger("llm-api.gptq_llama")
