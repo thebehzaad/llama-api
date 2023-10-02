@@ -3,7 +3,7 @@ models_family: gptq_llama
 setup_params:
   repo_id: <repo id>
   filename: gptq_model-4bit-128g.safetensors
-models_params:
+model_params:
   group_size: 128
   wbits: 4
   cuda_visible_devices: "0"
