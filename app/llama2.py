@@ -3,6 +3,7 @@ Llama 2 implementation on GPU
 Created by: BA
 Date: Oct 1st 23
 """
+
 #%% Importing libs and utils
 
 import logging
@@ -19,6 +20,8 @@ from transformers.modeling_utils import no_init_weights
 from base import BaseLLM
 from config import settings
 
+from convert_llama_weights_to_hf import convert
+
 
 #%%
 
@@ -28,65 +31,10 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "GPTQ-for-LLaMa"))
 logger = logging.getLogger("llm-api.gptq_llama")
 
 
-class GPTQLlamaLLM(BaseLLM):
+class LlamaLLM(BaseLLM):
     """
     Llama LLM implementation
     """
-
-    def _download(self, model_path, model_dir):  # pylint: disable=duplicate-code
-        if os.path.exists(model_path):
-            logger.info("found an existing model %s", model_path)
-            return
-
-        logger.info("downloading model to %s", model_path)
-
-        huggingface_hub.hf_hub_download(
-            repo_id=settings.setup_params["repo_id"],
-            filename=settings.setup_params["filename"],
-            local_dir=model_dir,
-            local_dir_use_symlinks=False,
-            cache_dir=os.path.join(settings.models_dir, ".cache"),
-        )
-
-        huggingface_hub.hf_hub_download(
-            repo_id=settings.setup_params["repo_id"],
-            filename="config.json",
-            local_dir=model_dir,
-            local_dir_use_symlinks=False,
-            cache_dir=os.path.join(settings.models_dir, ".cache"),
-        )
-
-        huggingface_hub.hf_hub_download(
-            repo_id=settings.setup_params["repo_id"],
-            filename="tokenizer.model",
-            local_dir=model_dir,
-            local_dir_use_symlinks=False,
-            cache_dir=os.path.join(settings.models_dir, ".cache"),
-        )
-
-        huggingface_hub.hf_hub_download(
-            repo_id=settings.setup_params["repo_id"],
-            filename="tokenizer_config.json",
-            local_dir=model_dir,
-            local_dir_use_symlinks=False,
-            cache_dir=os.path.join(settings.models_dir, ".cache"),
-        )
-
-    def _setup(self):
-        model_dir = super().get_model_dir(
-            settings.models_dir,
-            settings.model_family,
-            settings.setup_params["filename"],
-        )
-        model_path = os.path.join(
-            model_dir,
-            settings.setup_params["filename"],
-        )
-
-        self._download(model_path, model_dir)
-
-        logger.info("setup done successfully for %s", model_path)
-        return model_path
 
     def __init__(self, params: Dict[str, str]) -> None:
         model_path = self._setup()
@@ -107,6 +55,66 @@ class GPTQLlamaLLM(BaseLLM):
         self.model.to(self.device)
         self.tokenizer = AutoTokenizer.from_pretrained(
             settings.setup_params["repo_id"], use_fast=False
+        )
+
+    def _setup(self):
+        model_dir = super().get_model_dir(
+            settings.models_dir,
+            settings.model_family,
+            settings.setup_params["filename"],
+        )
+        model_path = os.path.join(
+            model_dir,
+            settings.setup_params["filename"],
+        )
+
+        self._download(model_path, model_dir)
+
+        logger.info("setup done successfully for %s", model_path)
+        return model_path
+
+
+    def _convert_to_hf(self, input_dir, model_size, output_dir, safe_serialization_flag):
+        
+        convert(input_dir, model_size, output_dir, safe_serialization_flag)
+
+    def _download(self, model_path, model_dir):  # pylint: disable=duplicate-code
+        if os.path.exists(model_path):
+            logger.info("found an existing model %s", model_path)
+            return
+
+        logger.info("downloading model to %s", model_path)
+        models_dir = os.path.join(os.path.dirname(__file__), "models")
+        huggingface_hub.hf_hub_download(
+            repo_id=settings.setup_params["repo_id"],
+            filename=settings.setup_params["filename"],
+            local_dir=models_dir,
+            local_dir_use_symlinks=False,
+            cache_dir=os.path.join(models_dir, ".cache"),
+        )
+
+        huggingface_hub.hf_hub_download(
+            repo_id=settings.setup_params["repo_id"],
+            filename="config.json",
+            local_dir=models_dir,
+            local_dir_use_symlinks=False,
+            cache_dir=os.path.join(models_dir, ".cache"),
+        )
+
+        huggingface_hub.hf_hub_download(
+            repo_id=settings.setup_params["repo_id"],
+            filename="tokenizer.model",
+            local_dir=models_dir,
+            local_dir_use_symlinks=False,
+            cache_dir=os.path.join(models_dir, ".cache"),
+        )
+
+        huggingface_hub.hf_hub_download(
+            repo_id=settings.setup_params["repo_id"],
+            filename="tokenizer_config.json",
+            local_dir=models_dir,
+            local_dir_use_symlinks=False,
+            cache_dir=os.path.join(models_dir, ".cache"),
         )
 
     def _load_quant(

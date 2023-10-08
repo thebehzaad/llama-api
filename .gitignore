@@ -161,5 +161,6 @@ cython_debug/
 
 models/
 
+convert_llama_weights_to_hf.py
 .python-version
 .vscode/

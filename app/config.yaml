@@ -1,8 +1,8 @@
 models_dir: /models
-models_family: gptq_llama
+models_family: llama_gptq
 setup_params:
-  repo_id: <repo id>
-  filename: gptq_model-4bit-128g.safetensors
+  repo_id: TheBloke/Llama-2-13B-GPTQ
+  filename: model.safetensors
 model_params:
   group_size: 128
   wbits: 4
