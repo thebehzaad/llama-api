@@ -1,8 +1,8 @@
 """
-python quant_autogptq.py /workspace/llama-30b /workspace/llama-30b-gptq wikitext --bits 4 --group_size 128 --desc_act 0  --dtype float16
+python ./app/auto_gptq/autogptq_llama2.py ./models/llama_7b_hf ./models/llama_7b_hf_gptq wikitext --bits 4 --group_size 128 --desc_act 0  --dtype float16
 """
 
-
+#%%
 import time
 import os
 import logging
@@ -13,6 +13,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import argparse
+
+#%%
 
 def get_wikitext2(nsamples, seed, seqlen, tokenizer):
     from datasets import load_dataset

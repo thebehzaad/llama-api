@@ -1,7 +1,12 @@
 """
+
 Llama 2 implementation on GPU
 Created by: BA
 Date: Oct 1st 23
+
+params = settings.model_params
+
+
 """
 
 #%% Importing libs and utils
@@ -20,23 +25,20 @@ from transformers.modeling_utils import no_init_weights
 from base import BaseLLM
 from config import settings
 
-from convert_llama_weights_to_hf import convert
+from converting_to_hf.convert_llama_weights_to_hf import convert
 
 
-#%%
+#%% 
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "GPTQ-for-LLaMa"))
-
 
 logger = logging.getLogger("llm-api.gptq_llama")
 
 
 class LlamaLLM(BaseLLM):
-    """
-    Llama LLM implementation
-    """
 
     def __init__(self, params: Dict[str, str]) -> None:
+        
         model_path = self._setup()
         group_size = params.get("group_size", 128)
         wbits = params.get("wbits", 4)
@@ -45,19 +47,12 @@ class LlamaLLM(BaseLLM):
 
         os.environ["CUDA_VISIBLE_DEVICES"] = cuda_visible_devices
         self.device = torch.device(dev)
-        self.model = self._load_quant(
-            settings.setup_params["repo_id"],
-            model_path,
-            wbits,
-            group_size,
-        )
 
         self.model.to(self.device)
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            settings.setup_params["repo_id"], use_fast=False
-        )
+        self.tokenizer = AutoTokenizer.from_pretrained(settings.setup_params["repo_id"], use_fast=False)
 
     def _setup(self):
+        
         model_dir = super().get_model_dir(
             settings.models_dir,
             settings.model_family,
@@ -68,9 +63,10 @@ class LlamaLLM(BaseLLM):
             settings.setup_params["filename"],
         )
 
-        self._download(model_path, model_dir)
+        #self._download(model_path, model_dir)
 
         logger.info("setup done successfully for %s", model_path)
+        
         return model_path
 
 
@@ -78,7 +74,12 @@ class LlamaLLM(BaseLLM):
         
         convert(input_dir, model_size, output_dir, safe_serialization_flag)
 
+    def _quantize(self):
+
+        raise NotImplementedError("agenerate endpoint is not yet implemented")
+
     def _download(self, model_path, model_dir):  # pylint: disable=duplicate-code
+        
         if os.path.exists(model_path):
             logger.info("found an existing model %s", model_path)
             return
@@ -117,61 +118,8 @@ class LlamaLLM(BaseLLM):
             cache_dir=os.path.join(models_dir, ".cache"),
         )
 
-    def _load_quant(
-        self,
-        model,
-        checkpoint,
-        wbits,
-        groupsize=-1,
-        fused_mlp=True,
-        eval=True,  # pylint: disable=redefined-builtin
-        warmup_autotune=True,
-    ):  # pylint: disable=too-many-arguments
-        config = LlamaConfig.from_pretrained(model)
-
-        def noop(*args, **kwargs):  # pylint: disable=unused-argument
-            pass
-
-        torch.nn.init.kaiming_uniform_ = noop
-        torch.nn.init.uniform_ = noop
-        torch.nn.init.normal_ = noop
-
-        torch.set_default_dtype(torch.half)
-        with no_init_weights():
-            torch.set_default_dtype(torch.half)
-            model = LlamaForCausalLM(config)
-            torch.set_default_dtype(torch.float)
-            if eval:
-                model = model.eval()
-            layers = find_layers(model)
-            for name in ["lm_head"]:
-                if name in layers:
-                    del layers[name]
-            quant.make_quant_linear(model, layers, wbits, groupsize)
-
-            del layers
-
-            logger.info("Loading model ...")
-            if checkpoint.endswith(".safetensors"):
-                model.load_state_dict(safe_load(checkpoint), strict=False)
-            else:
-                model.load_state_dict(torch.load(checkpoint), strict=False)
-
-            if eval:
-                quant.make_quant_attn(model)
-                quant.make_quant_norm(model)
-                if fused_mlp:
-                    quant.make_fused_mlp(model)
-            if warmup_autotune:
-                quant.autotune_warmup_linear(model, transpose=not eval)
-                if eval and fused_mlp:
-                    quant.autotune_warmup_fused(model)
-            model.seqlen = 2048
-            logger.info("Done loading model.")
-
-        return model
-
     def generate(self, prompt: str, params: Dict[str, str]) -> str:
+        
         """
         Generate text from Llama using the input prompt and parameters
         """

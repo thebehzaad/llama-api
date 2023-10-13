@@ -1,11 +1,20 @@
+
+
+
+#%%
+
 import os
 
 from transformers import AutoTokenizer, TextGenerationPipeline
 from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
 
 
-pretrained_model_dir = "facebook/opt-125m"
-quantized_model_dir = "opt-125m-4bit-128g"
+pretrained_model_dir = "../../../models/llama_7b_hf"
+quantized_model_dir = "../../../models/llama_7b_hf_quantized"
+
+
+#%%
+
 
 
 def main():
@@ -70,3 +79,5 @@ if __name__ == "__main__":
     )
 
     main()
+
+# %%

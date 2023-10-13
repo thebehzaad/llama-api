@@ -1,5 +1,6 @@
-models_dir: /models
+models_dir: /models/llama_13b_hf_gptq
 models_family: llama_gptq
+
 setup_params:
   repo_id: TheBloke/Llama-2-13B-GPTQ
   filename: model.safetensors

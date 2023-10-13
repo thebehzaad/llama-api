@@ -2,6 +2,7 @@
 """
 Main entry point for LLM-api
 """
+#%%
 from logging.config import dictConfig
 from typing import Any, Dict, Optional
 
@@ -14,6 +15,8 @@ from sse_starlette.sse import EventSourceResponse
 from app.config import settings
 from app.llms import get_model_class
 
+
+#%%
 log_config = uvicorn.config.LOGGING_CONFIG
 log_config["formatters"]["access"]["fmt"] = "%(asctime)s - %(levelname)s - %(message)s"
 log_config["formatters"]["default"][

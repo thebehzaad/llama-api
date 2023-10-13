@@ -1,43 +1,21 @@
-FROM debian:bullseye-slim as pytorch-install
+FROM nvidia/cuda:12.2.0-runtime-ubuntu20.04
 
-ARG PYTORCH_VERSION=2.0.0
-ARG PYTHON_VERSION=3.9
-ARG CUDA_VERSION=11.7.1
-ARG MAMBA_VERSION=23.1.0-4
-ARG CUDA_CHANNEL=nvidia
-ARG INSTALL_CHANNEL=pytorch
-# Automatically set by buildx
-ARG TARGETPLATFORM
+ARG DEBIAN_FRONTEND=noninteractive
 
-ENV PATH /opt/conda/bin:$PATH
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    build-essential \
-    ca-certificates \
-    ccache \
-    curl \
-    git && \
-    rm -rf /var/lib/apt/lists/*
 
-# CUDA kernels builder image
-FROM pytorch-install as kernel-builder
+WORKDIR /code
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    ninja-build \
-    && rm -rf /var/lib/apt/lists/*
+COPY ./requirements.txt /code/requirements.txt
 
-RUN /opt/conda/bin/conda install -q -c "nvidia/label/cuda-11.7.1"  cuda==11.7.1 && \
-    /opt/conda/bin/conda clean -yqa
+RUN apt-get update && apt-get install --no-install-recommends -y \
+  build-essential \
+  python3.9 \
+  python3-pip \
+  git \
+  ffmpeg \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-FROM debian:bullseye-slim as base
-
-ENV PATH=/opt/conda/bin:$PATH \
-    CONDA_PREFIX=/opt/conda
-
-LABEL com.nvidia.volumes.needed="nvidia_driver"
-
-# Copy conda with PyTorch installed
-COPY --from=kernel-builder /opt/conda /opt/conda
 
 RUN apt-get update && \
     apt-get install -y build-essential git zlib1g-dev cmake && \
@@ -58,6 +36,11 @@ COPY ./app /llm-api/app
 ENV PYTHONPATH "/llm-api"
 
 
-FROM base
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y python3-pip && \
+    pip3 install torch==2.0.0+cu117 torchvision==0.15.1+cu117 torchaudio==2.0.1 --index-url https://download.pytorch.org/whl/cu117 && \
+    apt-get clean && \ 
+    rm -rf /var/lib/apt/lists/*
+
 
 CMD ["python3", "./app/main.py"]

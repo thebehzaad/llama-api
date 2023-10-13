@@ -1,7 +1,10 @@
-"""
+"""---------------------------------------------------------------
+
 Config management for llm-api
-"""
-#%% 
+
+-----------------------------------------------------------------"""
+#%%
+
 import logging
 import os
 from typing import Any, Dict, Optional, Tuple, Type
@@ -13,14 +16,15 @@ from pydantic.fields import FieldInfo
 logger = logging.getLogger("llm-api.config")
 
 #%%
+
 class Settings(BaseSettings):  # pylint: disable=too-few-public-methods
     """
     Settings class to configure the app
     """
 
-    models_dir: str = "./models"
-    models_family: str 
-    models_params: Optional[Dict[str, Any]] = {}
+    model_dir: str = "./models"
+    model_family: str 
+    model_params: Optional[Dict[str, Any]] = {}
     setup_params: Dict[str, Any] = {}
     host: str = "0.0.0.0"
     port: int = 8000
@@ -89,6 +93,7 @@ class yaml_config_settings_source(PydanticBaseSettingsSource):
 
 
 #%%
+
 settings = Settings()
 
 # %%
